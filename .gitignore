@@ -1,0 +1,20 @@
+# Dependencies
+**/node_modules/
+
+# Build outputs
+**/dist/
+**/build/
+**/target/
+
+# IDE
+**/.idea/
+**/.vscode/*
+!**/.vscode/launch.json
+!**/.vscode/settings.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local-only Spring Boot overrides (do not commit secrets)
+backend/src/main/resources/application-local.properties

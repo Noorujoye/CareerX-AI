@@ -8,7 +8,6 @@ function Signup() {
     lastName: '',
     email: '',
     password: '',
-    confirmPassword: ''
   })
   const [errors, setErrors] = useState({})
   const navigate = useNavigate()
@@ -27,8 +26,7 @@ function Signup() {
     if (!formData.lastName) newErrors.lastName = 'Last name is required'
     if (!formData.email) newErrors.email = 'Email is required'
     if (!formData.password) newErrors.password = 'Password is required'
-    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match'
-    if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters'
+    if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters'
 
     return newErrors
   }
@@ -58,23 +56,21 @@ function Signup() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-green-50 to-green-100 dark:from-gray-900 dark:to-gray-800 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-linear-to-br from-green-50 to-green-100 dark:from-gray-900 dark:to-gray-800 flex flex-col justify-center py-3 sm:py-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
           <Link to="/" className="text-4xl font-bold text-green-600 dark:text-green-400">
             CareerX-AI
           </Link>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+
+          <h2 className="mt-3 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
             Make the most of your professional life
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Get started - it's free.
-          </p>
         </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow-xl rounded-lg sm:px-10 border border-gray-200 dark:border-gray-700">
+      <div className="mt-4 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white dark:bg-gray-800 py-6 px-4 shadow-xl rounded-lg sm:px-10 border border-gray-200 dark:border-gray-700">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -140,7 +136,7 @@ function Signup() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Password (6+ characters)
+                Password (8+ characters)
               </label>
               <div className="mt-1">
                 <input
@@ -156,26 +152,6 @@ function Signup() {
                 />
               </div>
               {errors.password && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.password}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Confirm password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                  placeholder="Confirm password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                />
-              </div>
-              {errors.confirmPassword && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.confirmPassword}</p>}
             </div>
 
             <div>
@@ -230,15 +206,8 @@ function Signup() {
         </div>
       </div>
 
-      <div className="mt-8 text-center text-xs text-gray-500 dark:text-gray-400">
+      <div className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
         <p>&copy; 2024 CareerX-AI. All rights reserved.</p>
-        <div className="mt-2 space-x-4">
-          <Link to="/about" className="hover:text-gray-700 dark:hover:text-gray-300">About</Link>
-          <Link to="/accessibility" className="hover:text-gray-700 dark:hover:text-gray-300">Accessibility</Link>
-          <Link to="/terms" className="hover:text-gray-700 dark:hover:text-gray-300">User Agreement</Link>
-          <Link to="/privacy" className="hover:text-gray-700 dark:hover:text-gray-300">Privacy Policy</Link>
-          <Link to="/cookie" className="hover:text-gray-700 dark:hover:text-gray-300">Cookie Policy</Link>
-        </div>
       </div>
     </div>
   )

@@ -4,6 +4,14 @@ function ResumeOptimizer() {
   const [selectedFile, setSelectedFile] = useState(null)
   const [uploadStatus, setUploadStatus] = useState('')
 
+  const clearSelectedFile = () => {
+    setSelectedFile(null)
+    setUploadStatus('')
+
+    const input = document.getElementById('resume-upload')
+    if (input) input.value = ''
+  }
+
   const handleFileSelect = (event) => {
     const file = event.target.files[0]
     if (file) {
@@ -34,7 +42,7 @@ function ResumeOptimizer() {
           <h3 className="text-4xl font-bold text-center text-green-800 mb-6">Resume Optimizer</h3>
           <p className="text-xl text-center text-gray-600 mb-12">Enhance your resume with AI-powered suggestions to stand out to employers.</p>
 
-          <div className="bg-gradient-to-br from-green-50 to-green-100 p-8 rounded-2xl shadow-xl backdrop-blur-sm border border-green-200/50 mb-8">
+          <div className="bg-linear-to-br from-green-50 to-green-100 p-8 rounded-2xl shadow-xl backdrop-blur-sm border border-green-200/50 mb-8">
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div>
                 <h4 className="text-2xl font-semibold text-green-800 mb-4">Key Features</h4>
@@ -62,7 +70,21 @@ function ResumeOptimizer() {
                   </label>
                 </div>
                 {selectedFile && (
-                  <p className="text-sm text-gray-600 mb-4">Selected: {selectedFile.name}</p>
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <p className="text-sm text-gray-600 truncate">Selected: {selectedFile.name}</p>
+                    <button
+                      type="button"
+                      onClick={clearSelectedFile}
+                      className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                      aria-label="Remove selected resume"
+                      title="Remove"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden="true">
+                        <path d="M18 6 6 18" />
+                        <path d="M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
                 )}
                 <button
                   onClick={handleOptimize}

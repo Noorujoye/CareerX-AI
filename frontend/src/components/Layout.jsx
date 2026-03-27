@@ -45,6 +45,8 @@ function Layout() {
   const navigate = useNavigate()
   const { currentUser, logout } = useAuth()
 
+  const isActivePath = (to) => location.pathname === to
+
   const [isMenuOpen, setIsMenuOpen] = useState(false) // mobile sidebar drawer
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false)
@@ -60,6 +62,7 @@ function Layout() {
 
   const navItems = [
     { to: '/', label: 'Home' },
+    { to: '/ats-score', label: 'ATS Score' },
     { to: '/resume-optimizer', label: 'Resume Optimizer' },
     { to: '/job-recommender', label: 'Job Recommender' },
     { to: '/interview-assistant', label: 'Interview Assistant' },
@@ -168,7 +171,7 @@ function Layout() {
                       <Link
                         to={item.to}
                         className={`font-medium transition text-white ${
-                          location.pathname === item.to
+                          isActivePath(item.to)
                             ? 'text-blue-300'
                             : 'hover:text-blue-300'
                         }`}
@@ -179,26 +182,28 @@ function Layout() {
                   ))}
                 </ul>
 
-                {/* Messages */}
-                <Link
-                  to="/messages"
-                  className="w-10 h-10 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center transition-colors"
-                  aria-label="Messages"
-                >
-                  <IconChat className="w-5 h-5" />
-                </Link>
+                {currentUser ? (
+                  <>
+                    {/* Messages */}
+                    <Link
+                      to="/messages"
+                      className="w-10 h-10 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center transition-colors"
+                      aria-label="Messages"
+                    >
+                      <IconChat className="w-5 h-5" />
+                    </Link>
 
-                {/* Profile */}
-                <div ref={profileRef} className="relative">
-                <button
-                  onClick={toggleProfile}
-                  className="w-10 h-10 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center font-semibold text-lg transition-colors"
-                  aria-label="Profile"
-                >
-                  {userName[0].toUpperCase()}
-                </button>
+                    {/* Profile */}
+                    <div ref={profileRef} className="relative">
+                      <button
+                        onClick={toggleProfile}
+                        className="w-10 h-10 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center font-semibold text-lg transition-colors"
+                        aria-label="Profile"
+                      >
+                        {userName[0].toUpperCase()}
+                      </button>
 
-                {isProfileOpen && (
+                      {isProfileOpen && (
                   <div className={`absolute right-0 mt-2 ${isProfileSettingsOpen ? 'w-72' : 'w-64'} bg-green-50 dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50`}>
                     <div className="p-4">
                       <div className="flex items-center gap-3">
@@ -232,8 +237,25 @@ function Layout() {
                       </div>
                     </div>
                   </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      className="hidden sm:inline-flex items-center justify-center px-4 py-2 rounded-full bg-white/10 text-white hover:bg-white/15 transition-colors"
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      to="/signup"
+                      className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-green-600 text-white hover:bg-green-700 transition-colors"
+                    >
+                      Sign Up
+                    </Link>
+                  </>
                 )}
-              </div>
               </div>
             </div>
           </div>
@@ -284,7 +306,7 @@ function Layout() {
                           to={item.to}
                           onClick={() => setIsMenuOpen(false)}
                           className={`block px-3 py-2 rounded-md transition-colors ${
-                            location.pathname === item.to
+                            isActivePath(item.to)
                               ? 'bg-green-100 text-green-800'
                               : 'text-gray-800 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800'
                           }`}

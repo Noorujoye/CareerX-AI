@@ -86,10 +86,10 @@ function Home() {
                   Join Now
                 </Link>
                 <Link
-                  to="/login"
+                  to="/ats-score"
                   className="bg-white text-green-600 border-2 border-green-600 px-10 py-4 rounded-full font-semibold hover:bg-green-50 transition duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                 >
-                  Sign In
+                  Check ATS Score
                 </Link>
               </>
             )}
