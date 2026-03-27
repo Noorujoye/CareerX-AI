@@ -1,39 +1,53 @@
+# CareerX-AI
+
 <p align="center">
-  <img src="image.png" alt="landing page" width="90%""")/>>
+  <img src="image.png" alt="landing page" width="90%"/>
 </p>
-
-### What's This All About?
-
-75% of resumes never reach human eyes. They're killed by ATS (Applicant Tracking Systems).
-
-ResumeATS Pro is here to change that game.
-
-What Does It Do?
-Analyzes resumes like an ATS would
-Gives actionable feedback
-Helps optimize resumes for ATS approval
-Provides a chat feature for personalized advice
-
-### Want to Contribute?
-
-**Hell yeah!** We love pull requests. Here’s how you can help out:
-
-1. **Fork the repo** to your own GitHub account.
-2. **Create your feature branch**:
-   ```bash
-   git checkout -b feature/my-new-feature
-   ```
-
-## CareerX-AI — Full Stack Setup (Backend + Frontend)
-
-This workspace contains:
-
-- **backend/** — Spring Boot API (JWT auth + secured endpoints)
-- **frontend/** — React + Vite + Tailwind UI
 
 ---
 
-## Folder Structure (high level)
+## Overview
+
+Approximately 75% of resumes are filtered out by Applicant Tracking Systems (ATS) before reaching a human reviewer.
+
+ResumeATS Pro is designed to help candidates optimize their resumes to pass ATS screening.
+
+---
+
+## Features
+
+- Analyzes resumes using ATS-like logic
+- Provides actionable feedback
+- Helps optimize resumes for ATS compatibility
+- Includes a chat feature for personalized guidance
+
+---
+
+## Contribution
+
+Contributions are welcome.
+
+### Steps
+
+1. Fork the repository
+2. Create a feature branch:
+
+```bash
+git checkout -b feature/my-new-feature
+```
+
+---
+
+# CareerX-AI — Full Stack Setup
+
+This project includes:
+
+- backend/ — Spring Boot API (JWT authentication and secured endpoints)
+- frontend/ — React + Vite + Tailwind UI
+
+---
+
+## Folder Structure
 
 ```
 application/
@@ -46,180 +60,160 @@ application/
 
 ## Prerequisites
 
-Install these once on your machine:
-
 ### Backend
 
-- **Java 21** (JDK)
-- **Maven 3.9+** (or use your IDE’s bundled Maven)
-- **MySQL 8.x** (for running the app locally)
+- Java 21 (JDK)
+- Maven 3.9+
+- MySQL 8.x
 
 ### Frontend
 
-- **Node.js 18+** (recommended 20+)
-- npm (ships with Node)
+- Node.js 18+ (recommended 20+)
+- npm
 
 ---
 
 ## Configuration (Environment Variables)
 
-The backend reads configuration from environment variables.
-
 ### Required
 
-- `DB_USERNAME` (default: `root`)
-- `DB_PASSWORD` (**required**)
-- `JWT_SECRET` (**required**, must be **>= 32 characters** for HS256)
+- `DB_USERNAME` (default: root)
+- `DB_PASSWORD` (required)
+- `JWT_SECRET` (minimum 32 characters)
 
 ### Optional
 
-- `DB_URL` (if you want to override the JDBC URL)
-- `JWT_EXPIRATION_MS` (token lifetime)
+- `DB_URL`
+- `JWT_EXPIRATION_MS`
 
-#### PowerShell (Windows)
+---
+
+### Windows (PowerShell)
 
 ```powershell
 $env:DB_USERNAME = "root"
 $env:DB_PASSWORD = "<your-mysql-password>"
-$env:JWT_SECRET = "<use-a-32+-character-secret>"
+$env:JWT_SECRET = "<32+ character secret>"
 ```
 
-#### CMD (Windows)
+### Windows (CMD)
 
 ```bat
 set DB_USERNAME=root
 set DB_PASSWORD=<your-mysql-password>
-set JWT_SECRET=<use-a-32+-character-secret>
+set JWT_SECRET=<32+ character secret>
 ```
 
-#### macOS / Linux
+### macOS / Linux
 
 ```bash
 export DB_USERNAME=root
 export DB_PASSWORD='<your-mysql-password>'
-export JWT_SECRET='<use-a-32+-character-secret>'
+export JWT_SECRET='<32+ character secret>'
 ```
-
-Notes:
-
-- If you start the backend from the **VS Code Run button / IDE**, you may need to set env vars in the run configuration (not only in a terminal).
-- Keep `JWT_SECRET` private. Do not commit it.
 
 ---
 
-## Recommended Local Dev Setup (Spring Profile: `local`)
+## Recommended Local Development Setup
 
-If you don’t want to set env vars every time, the recommended approach is to use a **local-only Spring profile file** that is **gitignored**.
+Use Spring profile `local`.
 
-What you do:
-
-1. Copy the template:
+### Step 1: Copy configuration file
 
 ```powershell
 Copy-Item backend\src\main\resources\application-local.properties.example backend\src\main\resources\application-local.properties
 ```
 
-2. Edit `backend/src/main/resources/application-local.properties` and set your real local values (DB password, JWT secret).
+### Step 2: Edit configuration
 
-3. Run backend with the local profile:
+Set:
 
-```powershell
+- Database password
+- JWT secret
+
+### Step 3: Run backend
+
+```bash
 cd backend
 mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-### Run From VS Code (no env-var confusion)
+---
 
-This repo includes a VS Code Run/Debug configuration that launches the backend with `-Dspring.profiles.active=local`.
+## Running from VS Code
 
-Steps:
+1. Create `application-local.properties`
+2. Open Run and Debug
+3. Select "Backend (local profile)"
+4. Run
 
-1. Make sure you created `backend/src/main/resources/application-local.properties` (copy from the `.example` file).
-2. Open **Run and Debug** in VS Code.
-3. Select **Backend (local profile)** and press Run.
+Benefits:
 
-Why this is “best practice”:
-
-- Secrets stay out of git (safe)
-- Local dev is convenient (no repeated env var setup)
-- Staging/prod can still use real env vars / secret manager
+- Secrets are not committed to version control
+- Easier local setup
+- Production environments can still use environment variables
 
 ---
 
 ## MySQL Setup
 
-1. Ensure MySQL is running
-2. Create a database (name can match the JDBC URL configured in backend properties)
-
-Example:
-
 ```sql
 CREATE DATABASE login_system;
 ```
 
-If you’re not sure what DB name is configured, check backend `application.properties`.
-
 ---
 
-## Run the Project
+## Running the Project
 
-### 1) Start Backend (Spring Boot)
+### Backend
 
-From the workspace root:
-
-```powershell
+```bash
 cd backend
 mvn spring-boot:run
 ```
 
-Backend runs at:
+Runs at: http://localhost:8080
 
-- `http://localhost:8080`
+---
 
-### 2) Start Frontend (React + Vite)
+### Frontend
 
-Open a new terminal from the workspace root:
-
-```powershell
+```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Frontend runs at:
-
-- `http://localhost:5173`
-
-The frontend is configured to call the backend via `/api/...` (Vite dev proxy).
+Runs at: http://localhost:5173
 
 ---
 
-## Test / Build
+## Testing and Build
 
-### Backend Tests
+### Backend
 
-```powershell
-cd backend
+```bash
 mvn test
 ```
 
-Tests use an in-memory H2 database so you don’t need MySQL just to run tests.
+Uses H2 in-memory database for testing.
 
-### Frontend Lint / Build
+---
 
-```powershell
-cd frontend
+### Frontend
+
+```bash
 npm run lint
 npm run build
 ```
 
 ---
 
-## API Quick Reference
+## API Reference
 
 ### Register
 
-`POST /api/v1/auth/register`
+POST `/api/v1/auth/register`
 
 ```json
 {
@@ -233,30 +227,43 @@ npm run build
 Response:
 
 ```json
-{ "token": "<jwt>" }
+{
+  "token": "<jwt>"
+}
 ```
+
+---
 
 ### Login
 
-`POST /api/v1/auth/login`
+POST `/api/v1/auth/login`
 
 ```json
-{ "email": "user@example.com", "password": "secret123" }
+{
+  "email": "user@example.com",
+  "password": "secret123"
+}
 ```
 
 Response:
 
 ```json
-{ "token": "<jwt>" }
+{
+  "token": "<jwt>"
+}
 ```
 
-### Current User (Protected)
+---
 
-`GET /api/v1/users/me`
+### Current User
+
+GET `/api/v1/users/me`
 
 Header:
 
-`Authorization: Bearer <jwt>`
+```
+Authorization: Bearer <jwt>
+```
 
 Response:
 
@@ -273,11 +280,29 @@ Response:
 
 ## Troubleshooting
 
-### MySQL error: `Access denied` / `using password: NO`
+### MySQL Error: Access denied / using password: NO
 
-- `DB_PASSWORD` is not set (or not visible to the process you launched).
-- Fix: set env vars in the same terminal where you run `mvn spring-boot:run`, or set them in your IDE Run/Debug configuration.
+Cause:
 
-### JWT error: secret too short
+- `DB_PASSWORD` is not set
 
-- `JWT_SECRET` must be at least 32 characters.
+Fix:
+
+- Set environment variables in the same terminal or IDE configuration
+
+---
+
+### JWT Error: Secret too short
+
+Fix:
+
+- Use a secret with at least 32 characters
+
+---
+
+## Notes
+
+- Do not commit secrets to version control
+- Prefer local configuration files or environment variables
+- Maintain a clean project structure
+- Follow proper commit practices
