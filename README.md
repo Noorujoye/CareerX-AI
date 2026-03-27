@@ -1,3 +1,10 @@
+<p align="center">
+  <img src="image.png" alt="landing page" width="90%""")/>>
+</p>
+
+
+
+
 ## CareerX-AI — Full Stack Setup (Backend + Frontend)
 
 This workspace contains:
