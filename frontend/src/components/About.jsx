@@ -1,6 +1,5 @@
 import React from 'react'
 
-// Inline SVG icons (instead of emojis) for consistent UI across devices.
 function IconRobot(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>

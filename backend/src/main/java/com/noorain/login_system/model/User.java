@@ -26,24 +26,53 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(unique = true , nullable = false)
+    @Column(unique = true, nullable = false)
     private String email;
 
     @JsonIgnore
     private String password;
 
+    @Column(name = "first_name")
     private String firstName;
 
+    @Column(name = "last_name") 
     private String lastName;
+
+    @Column(length = 2000)
+    private String bio;
+
+    private String location;
+
+    private String currentPosition;
+
+    @Column(length = 4000)
+    private String experience;
+
+    @Column(length = 2000)
+    private String skills;
+
+    @Column(length = 2000)
+    private String education;
+
+    private String linkedinUrl;
+
+    @Column(name = "github_url", length = 2000)
+    private String githubUrl;
+
+    @Column(name = "profile_image_url", length = 2000)
+    private String profileImageUrl;
 
     @Enumerated(EnumType.STRING)
     private Role role;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Spring Security expects authorities like "ROLE_USER" for hasRole("USER") checks.
-        // This makes authorization work correctly once you start protecting endpoints by role.
-        if (role == null) return List.of();
+        // Spring Security expects authorities like "ROLE_USER" for hasRole("USER")
+        // checks.
+        // This makes authorization work correctly once you start protecting endpoints
+        // by role.
+        if (role == null)
+            return List.of();
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 

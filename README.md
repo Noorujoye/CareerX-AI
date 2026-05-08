@@ -306,3 +306,24 @@ Fix:
 - Prefer local configuration files or environment variables
 - Maintain a clean project structure
 - Follow proper commit practices
+
+$env:GEMINI_API_KEY="PASTE_YOUR_KEY_HERE"
+
+| Factor      | Weight |
+| ----------- | ------ |
+| Parsing     | 20%    |
+| Structure   | 22%    |
+| Keywords    | 28%    |
+| Experience  | 20%    |
+| Readability | 10%    |
+
+```
+- We divide the resume evaluation into multiple categories like parsing, structure, keywords, experience, and readability, and assign each a fixed weight to calculate the final ATS score.
+```
+
+recruiter ke liye ek feature ye ho skta hai ki , wo filter ke according employee search kr skta hai or jd ke base pe , like apn har user ko resume create krne ka bol skte hai uski respective profile mein , then hmara sysyem uska ats score check kr lega , queue use krke apn show kr denege if recuiter se match krta hai , isse recruiter ki help hogi , 
+
+sometimes , HR get so much resumes and not have enough time to see 
+so apn bunch mein bhi resume ko accept kr lenge 
+then un subko particular job role ke accoring ats check krrke ek table mein data show krenege in order (ats score , and all)
+

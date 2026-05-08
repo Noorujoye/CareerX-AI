@@ -45,6 +45,8 @@ function Layout() {
   const navigate = useNavigate()
   const { currentUser, logout } = useAuth()
 
+  const [avatarBust, setAvatarBust] = useState(0)
+
   const isActivePath = (to) => location.pathname === to
 
   const [isMenuOpen, setIsMenuOpen] = useState(false) // mobile sidebar drawer
@@ -78,12 +80,19 @@ function Layout() {
         setSettings(parsed)
         if (parsed.darkMode) {
           document.documentElement.classList.add('dark')
+        } else {
+          document.documentElement.classList.remove('dark')
         }
       }
     } catch (e) {
       console.warn('Failed to load settings:', e)
     }
   }, [])
+
+  useEffect(() => {
+    if (settings.darkMode) document.documentElement.classList.add('dark')
+    else document.documentElement.classList.remove('dark')
+  }, [settings.darkMode])
 
   useEffect(() => {
     try {
@@ -103,6 +112,10 @@ function Layout() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isProfileOpen])
+
+  useEffect(() => {
+    setAvatarBust(Date.now())
+  }, [currentUser?.profileImageUrl])
 
   // Keep UI consistent when navigating: close any open popovers/drawers.
   useEffect(() => {
@@ -126,14 +139,21 @@ function Layout() {
   }
 
   const userName = (currentUser && (currentUser.name || currentUser.displayName || currentUser.email)) || 'Profile'
+  const rawAvatarUrl = currentUser?.profileImageUrl || ''
+  const absAvatarUrl = rawAvatarUrl && rawAvatarUrl.startsWith('/')
+    ? `${window.location.origin.replace(':5173', ':8080')}${rawAvatarUrl}`
+    : rawAvatarUrl
+  const userAvatarUrl = absAvatarUrl
+    ? `${absAvatarUrl}${absAvatarUrl.includes('?') ? '&' : '?'}t=${avatarBust}`
+    : ''
 
   return (
     <>
-      <div className="min-h-screen bg-linear-to-b from-green-50 via-white to-white">
+      <div className="min-h-screen bg-linear-to-b from-green-50 via-white to-white dark:from-gray-950 dark:via-gray-950 dark:to-gray-950">
 
         {/* Navbar */}
         <nav className="fixed top-0 left-0 right-0 z-50">
-          <div className="backdrop-blur-md bg-black border-b border-gray-200 shadow-sm">
+          <div className="backdrop-blur-md bg-black border-b border-white/10 shadow-sm">
             <div className="container mx-auto px-4 py-3 flex items-center gap-3">
 
               {/* Mobile: Hamburger + Logo (grouped so they don't drift to center) */}
@@ -184,15 +204,6 @@ function Layout() {
 
                 {currentUser ? (
                   <>
-                    {/* Messages */}
-                    <Link
-                      to="/messages"
-                      className="w-10 h-10 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center transition-colors"
-                      aria-label="Messages"
-                    >
-                      <IconChat className="w-5 h-5" />
-                    </Link>
-
                     {/* Profile */}
                     <div ref={profileRef} className="relative">
                       <button
@@ -200,7 +211,11 @@ function Layout() {
                         className="w-10 h-10 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center font-semibold text-lg transition-colors"
                         aria-label="Profile"
                       >
-                        {userName[0].toUpperCase()}
+                        {userAvatarUrl ? (
+                          <img src={userAvatarUrl} alt="Profile" className="w-full h-full object-cover rounded-full" />
+                        ) : (
+                          userName[0].toUpperCase()
+                        )}
                       </button>
 
                       {isProfileOpen && (
@@ -208,7 +223,11 @@ function Layout() {
                     <div className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center font-semibold text-lg">
-                          {userName[0].toUpperCase()}
+                          {userAvatarUrl ? (
+                            <img src={userAvatarUrl} alt="Profile" className="w-full h-full object-cover rounded-full" />
+                          ) : (
+                            userName[0].toUpperCase()
+                          )}
                         </div>
                         <div>
                           <div className="font-medium text-gray-900 dark:text-gray-100">{userName}</div>
@@ -229,6 +248,34 @@ function Layout() {
                           <IconSettings className="w-4 h-4" />
                           <span>Settings</span>
                         </button>
+
+                        {isProfileSettingsOpen && (
+                          <div className="mt-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Theme</div>
+                                <div className="text-xs text-gray-600 dark:text-gray-400">Light / Dark mode</div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setSettings((s) => ({ ...s, darkMode: !s.darkMode }))}
+                                className={`relative inline-flex h-7 w-12 items-center rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 ${
+                                  settings.darkMode
+                                    ? 'bg-green-600 border-green-600'
+                                    : 'bg-gray-200 border-gray-300'
+                                }`}
+                                aria-label="Toggle dark mode"
+                                aria-pressed={settings.darkMode}
+                              >
+                                <span
+                                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                                    settings.darkMode ? 'translate-x-6' : 'translate-x-1'
+                                  }`}
+                                />
+                              </button>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Logout */}
                         <button onClick={handleLogout} className="w-full text-left p-2 text-red-600 rounded hover:bg-green-100 dark:hover:bg-gray-700 transition-colors">
@@ -316,20 +363,6 @@ function Layout() {
                       </li>
                     ))}
 
-                    <li>
-                      <Link
-                        to="/messages"
-                        onClick={() => setIsMenuOpen(false)}
-                        className={`block px-3 py-2 rounded-md transition-colors ${
-                          location.pathname === '/messages'
-                            ? 'bg-green-100 text-green-800'
-                            : 'text-gray-800 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800'
-                        }`}
-                      >
-                        Messages
-                      </Link>
-                    </li>
-
                     {currentUser ? (
                       <li>
                         <button
@@ -362,7 +395,7 @@ function Layout() {
         )}
 
         {/* Main */}
-        <main className="pt-20 container mx-auto px-4">
+        <main className="pt-20 container mx-auto px-4 text-gray-900 dark:text-gray-100">
           <div className={
             settings.fontSize === 'small' ? 'text-sm' :
             settings.fontSize === 'large' ? 'text-lg' :

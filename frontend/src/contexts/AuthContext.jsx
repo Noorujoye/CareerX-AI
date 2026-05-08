@@ -60,6 +60,28 @@ async function getJson(path, token) {
   return { ok: true, data }
 }
 
+async function putJson(path, token, body) {
+  const res = await fetch(path, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  })
+
+  const contentType = res.headers.get('content-type') || ''
+  const isJson = contentType.includes('application/json')
+  const data = isJson ? await res.json().catch(() => null) : await res.text().catch(() => null)
+
+  if (!res.ok) {
+    const message = (data && data.message) || (typeof data === 'string' && data) || 'Request failed'
+    return { ok: false, status: res.status, message }
+  }
+
+  return { ok: true, data }
+}
+
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (!context) throw new Error('useAuth must be used within an AuthProvider')
@@ -81,7 +103,6 @@ export const AuthProvider = ({ children }) => {
           return
         }
 
-        // Optimistic UI: show something immediately based on token subject
         const emailFromToken = decodeJwtSubject(token)
         if (!cancelled) setCurrentUser(emailFromToken ? { email: emailFromToken } : null)
 
@@ -128,7 +149,7 @@ export const AuthProvider = ({ children }) => {
 
     localStorage.setItem(TOKEN_KEY, token)
 
-    // Prefer server-side /me response (includes name/role) over decoding JWT locally
+    
     const me = await getJson('/api/v1/users/me', token)
     const user = me.ok && me.data?.email ? me.data : { email: decodeJwtSubject(token) || email }
     setCurrentUser(user)
@@ -164,15 +185,13 @@ export const AuthProvider = ({ children }) => {
   }
 
   const updateUser = (updatedUser) => {
-    // With the current backend, we only have a JWT token and email subject.
-    // This is kept for forward compatibility if you later add a /me endpoint.
     if (!updatedUser?.email) return
-    setCurrentUser({ email: updatedUser.email })
+    setCurrentUser(updatedUser)
   }
 
   const value = useMemo(() => {
     const token = localStorage.getItem(TOKEN_KEY)
-    return { currentUser, loading, login, signup, logout, updateUser, token }
+    return { currentUser, loading, login, signup, logout, updateUser, token, getJson, putJson }
   }, [currentUser, loading])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

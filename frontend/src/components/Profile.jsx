@@ -1,9 +1,9 @@
-import React, { useState, useLayoutEffect } from 'react'
+import React, { useMemo, useRef, useState, useLayoutEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 function Profile() {
-  const { currentUser } = useAuth()
+  const { currentUser, token, putJson, updateUser } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -15,10 +15,28 @@ function Profile() {
     skills: '',
     education: '',
     linkedinUrl: '',
-    githubUrl: ''
+    githubUrl: '',
+    profileImageUrl: ''
   })
   const [errors, setErrors] = useState({})
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [apiError, setApiError] = useState('')
+
+  const fileInputRef = useRef(null)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [imageError, setImageError] = useState('')
+
+  // Crop state
+  const [cropOpen, setCropOpen] = useState(false)
+  const [cropSrc, setCropSrc] = useState('')
+  const [cropFileType, setCropFileType] = useState('image/jpeg')
+  const [crop, setCrop] = useState({ x: 0, y: 0, size: 220 })
+  const cropContainerRef = useRef(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const dragOffsetRef = useRef({ dx: 0, dy: 0 })
   const navigate = useNavigate()
+  const apiBase = ''
 
   useLayoutEffect(() => {
     if (!currentUser) {
@@ -26,26 +44,62 @@ function Profile() {
       return
     }
 
-    // Load profile data from localStorage or initialize with user data
-    const profileKey = `careerxai-profile-${currentUser.email}`
-    const profileData = localStorage.getItem(profileKey)
-    if (profileData) {
-      setFormData(JSON.parse(profileData))
-    } else {
-      setFormData({
-        name: '',
-        email: currentUser.email || '',
-        bio: '',
-        location: '',
-        currentPosition: '',
-        experience: '',
-        skills: '',
-        education: '',
-        linkedinUrl: '',
-        githubUrl: ''
-      })
+    let cancelled = false
+
+    const load = async () => {
+      try {
+        setApiError('')
+        setIsLoadingProfile(true)
+
+        const res = await fetch('/api/v1/users/me/profile', {
+          method: 'GET',
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        })
+
+        const contentType = res.headers.get('content-type') || ''
+        const isJson = contentType.includes('application/json')
+        const data = isJson ? await res.json().catch(() => null) : await res.text().catch(() => null)
+
+        if (!res.ok) {
+          const message = (data && data.message) || (typeof data === 'string' && data) || 'Failed to load profile'
+          if (!cancelled) setApiError(message)
+          return
+        }
+
+        const firstName = data?.firstName || ''
+        const lastName = data?.lastName || ''
+        const fullName = `${firstName} ${lastName}`.trim()
+
+        if (!cancelled) {
+          const rawProfileUrl = data?.profileImageUrl || ''
+          const absProfileUrl = rawProfileUrl && rawProfileUrl.startsWith('/') ? `${window.location.origin.replace(':5173', ':8080')}${rawProfileUrl}` : rawProfileUrl
+          const profileUrl = absProfileUrl ? `${absProfileUrl}${absProfileUrl.includes('?') ? '&' : '?'}t=${Date.now()}` : ''
+          setFormData({
+            name: fullName,
+            email: data?.email || currentUser.email || '',
+            bio: data?.bio || '',
+            location: data?.location || '',
+            currentPosition: data?.currentPosition || '',
+            experience: data?.experience || '',
+            skills: data?.skills || '',
+            education: data?.education || '',
+            linkedinUrl: data?.linkedinUrl || '',
+            githubUrl: data?.githubUrl || '',
+            profileImageUrl: profileUrl,
+          })
+        }
+      } finally {
+        if (!cancelled) setIsLoadingProfile(false)
+      }
     }
-  }, [currentUser, navigate])
+
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [currentUser, navigate, token])
 
   const handleChange = (e) => {
     setFormData({
@@ -61,7 +115,150 @@ function Profile() {
     return newErrors
   }
 
-  const handleSubmit = (e) => {
+  const initials = useMemo(() => {
+    const name = (formData.name || currentUser?.email || 'U').trim()
+    return name[0] ? name[0].toUpperCase() : 'U'
+  }, [formData.name, currentUser?.email])
+
+  const displayTitle = formData.currentPosition || 'Professional'
+
+  const openFilePicker = () => {
+    setImageError('')
+    fileInputRef.current?.click()
+  }
+
+  const onPickImage = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImageError('')
+
+    const allowed = ['image/jpeg', 'image/png', 'image/webp']
+    if (!allowed.includes(file.type)) {
+      setImageError('Only JPG, PNG, or WEBP images are supported')
+      e.target.value = ''
+      return
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      setImageError('Image must be <= 3MB')
+      e.target.value = ''
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      setCropSrc(String(reader.result || ''))
+      setCropFileType(file.type || 'image/jpeg')
+      setCrop({ x: 0, y: 0, size: 220 })
+      setCropOpen(true)
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  const clampCrop = (next) => {
+    const container = cropContainerRef.current
+    if (!container) return next
+    const w = container.clientWidth
+    const h = container.clientHeight
+    const size = Math.max(120, Math.min(next.size, Math.min(w, h)))
+    const x = Math.max(0, Math.min(next.x, w - size))
+    const y = Math.max(0, Math.min(next.y, h - size))
+    return { x, y, size }
+  }
+
+  const onCropMouseDown = (e) => {
+    setIsDragging(true)
+    dragOffsetRef.current = { dx: e.clientX - crop.x, dy: e.clientY - crop.y }
+  }
+
+  const onCropMouseMove = (e) => {
+    if (!isDragging) return
+    const next = clampCrop({ ...crop, x: e.clientX - dragOffsetRef.current.dx, y: e.clientY - dragOffsetRef.current.dy })
+    setCrop(next)
+  }
+
+  const onCropMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  const renderCroppedBlob = async () => {
+    const img = new Image()
+    img.src = cropSrc
+    await new Promise((resolve, reject) => {
+      img.onload = resolve
+      img.onerror = reject
+    })
+
+    const container = cropContainerRef.current
+    if (!container) throw new Error('Crop container not ready')
+
+    // crop coordinates are in container px; map to image px
+    const scaleX = img.naturalWidth / container.clientWidth
+    const scaleY = img.naturalHeight / container.clientHeight
+    const sx = Math.round(crop.x * scaleX)
+    const sy = Math.round(crop.y * scaleY)
+    const sSizeX = Math.round(crop.size * scaleX)
+    const sSizeY = Math.round(crop.size * scaleY)
+
+    const canvas = document.createElement('canvas')
+    const outSize = 512
+    canvas.width = outSize
+    canvas.height = outSize
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas not supported')
+
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
+    ctx.drawImage(img, sx, sy, sSizeX, sSizeY, 0, 0, outSize, outSize)
+
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, cropFileType === 'image/png' ? 'image/png' : 'image/jpeg', 0.9))
+    if (!blob) throw new Error('Failed to create image blob')
+    return blob
+  }
+
+  const uploadCroppedImage = async () => {
+    setIsUploadingImage(true)
+    setImageError('')
+    try {
+      const blob = await renderCroppedBlob()
+      const fd = new FormData()
+      const ext = cropFileType === 'image/png' ? 'png' : 'jpg'
+      fd.append('image', new File([blob], `profile.${ext}`, { type: blob.type }))
+
+      const res = await fetch('/api/v1/users/me/profile-image', {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: fd,
+      })
+
+      const contentType = res.headers.get('content-type') || ''
+      const isJson = contentType.includes('application/json')
+      const data = isJson ? await res.json().catch(() => null) : await res.text().catch(() => null)
+
+      if (!res.ok) {
+        const message = (data && data.message) || (typeof data === 'string' && data) || 'Failed to upload image'
+        setImageError(message)
+        return
+      }
+
+      const rawUrl = data?.profileImageUrl || ''
+      const absUrl = rawUrl && rawUrl.startsWith('/') ? `${window.location.origin.replace(':5173', ':8080')}${rawUrl}` : rawUrl
+      const bustedUrl = absUrl ? `${absUrl}${absUrl.includes('?') ? '&' : '?'}t=${Date.now()}` : ''
+
+      setFormData((prev) => ({ ...prev, profileImageUrl: bustedUrl || prev.profileImageUrl }))
+      // Keep navbar display in sync
+      updateUser({ ...currentUser, firstName: data?.firstName, lastName: data?.lastName, email: data?.email, profileImageUrl: bustedUrl || absUrl || rawUrl })
+      setCropOpen(false)
+    } catch (e) {
+      setImageError('Failed to upload image')
+    } finally {
+      setIsUploadingImage(false)
+    }
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const validationErrors = validateForm()
     if (Object.keys(validationErrors).length > 0) {
@@ -69,37 +266,49 @@ function Profile() {
       return
     }
 
-    // Save profile data
-    localStorage.setItem(`careerxai-profile-${currentUser.email}`, JSON.stringify(formData))
+    const [firstNameRaw, ...lastNameParts] = (formData.name || '').trim().split(/\s+/)
+    const firstName = firstNameRaw || ''
+    const lastName = lastNameParts.join(' ')
 
-    setIsEditing(false)
-    setErrors({})
+    setIsSaving(true)
+    setApiError('')
+    try {
+      const result = await putJson('/api/v1/users/me/profile', token, {
+        firstName,
+        lastName,
+        bio: formData.bio,
+        location: formData.location,
+        currentPosition: formData.currentPosition,
+        experience: formData.experience,
+        skills: formData.skills,
+        education: formData.education,
+        linkedinUrl: formData.linkedinUrl,
+        githubUrl: formData.githubUrl,
+        profileImageUrl: formData.profileImageUrl,
+      })
+
+      if (!result.ok) {
+        setApiError(result.message || 'Failed to save profile')
+        return
+      }
+
+      setIsEditing(false)
+      setErrors({})
+
+      // Update navbar/user instantly
+      const server = result.data
+      if (server?.email) updateUser(server)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleCancel = () => {
-    // Reload original data
-    const profileData = localStorage.getItem(`careerxai-profile-${currentUser.email}`)
-    if (profileData) {
-      setFormData(JSON.parse(profileData))
-    } else {
-      setFormData({
-        name: '',
-        email: currentUser.email || '',
-        bio: '',
-        location: '',
-        currentPosition: '',
-        experience: '',
-        skills: '',
-        education: '',
-        linkedinUrl: '',
-        githubUrl: ''
-      })
-    }
     setIsEditing(false)
     setErrors({})
   }
 
-  if (!currentUser) {
+  if (!currentUser || isLoadingProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
         <div className="text-center">
@@ -111,32 +320,76 @@ function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-green-600 shadow-xl rounded-lg overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto">
+        <div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-green-100">
           {/* Header */}
-          <div className="bg-gradient-to-r from-green-600 to-green-700 h-32 relative">
-            <div className="absolute -bottom-16 left-8">
-              <div className="w-32 h-32 bg-white rounded-full border-4 border-white shadow-lg flex items-center justify-center">
-                <span className="text-4xl font-bold text-green-600">{formData.name.charAt(0).toUpperCase()}</span>
+          <div className="bg-gradient-to-r from-green-600 to-green-700 p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+              <div className="flex items-center gap-5">
+                <div className="relative">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-white/15 border border-white/30 overflow-hidden flex items-center justify-center">
+                    {formData.profileImageUrl ? (
+                      <img
+                        src={formData.profileImageUrl}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-3xl sm:text-4xl font-bold text-white">{initials}</span>
+                    )}
+                  </div>
+
+                  {isEditing && (
+                    <button
+                      type="button"
+                      onClick={openFilePicker}
+                      className="absolute -bottom-1 -right-1 bg-white text-green-700 hover:bg-green-50 border border-green-200 rounded-full px-3 py-1 text-xs font-semibold"
+                    >
+                      Change
+                    </button>
+                  )}
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    onChange={onPickImage}
+                  />
+                </div>
+
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight">{formData.name || currentUser?.email}</h1>
+                  <p className="text-green-100">{displayTitle}</p>
+                  {formData.location && <p className="text-green-200">{formData.location}</p>}
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setIsEditing(!isEditing)}
+                  className="bg-white/10 hover:bg-white/15 text-white px-4 py-2 rounded-lg transition duration-150 ease-in-out border border-white/20"
+                >
+                  {isEditing ? 'Cancel' : 'Edit Profile'}
+                </button>
               </div>
             </div>
           </div>
 
-          <div className="pt-20 pb-8 px-8">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h1 className="text-3xl font-bold text-white">{formData.name}</h1>
-                <p className="text-green-100">{formData.currentPosition || 'Professional'}</p>
-                <p className="text-green-200">{formData.location}</p>
+          <div className="p-6 sm:p-8">
+
+            {apiError && (
+              <div className="mb-6 rounded-md bg-red-50 p-4">
+                <p className="text-sm text-red-700">{apiError}</p>
               </div>
-              <button
-                onClick={() => setIsEditing(!isEditing)}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition duration-150 ease-in-out"
-              >
-                {isEditing ? 'Cancel' : 'Edit Profile'}
-              </button>
-            </div>
+            )}
+
+            {imageError && (
+              <div className="mb-6 rounded-md bg-red-50 p-4">
+                <p className="text-sm text-red-700">{imageError}</p>
+              </div>
+            )}
 
             {isEditing ? (
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -304,84 +557,70 @@ function Profile() {
                   </button>
                   <button
                     type="submit"
+                    disabled={isSaving}
                     className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition duration-150 ease-in-out"
                   >
-                    Save Changes
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               </form>
             ) : (
-              <div className="space-y-6">
-                {formData.bio && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">About</h3>
-                    <p className="text-gray-700">{formData.bio}</p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {formData.experience && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Experience</h3>
-                      <p className="text-gray-700 whitespace-pre-line">{formData.experience}</p>
-                    </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                  {formData.bio && (
+                    <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                      <h3 className="text-lg font-semibold text-gray-900">About</h3>
+                      <p className="mt-2 text-gray-700 whitespace-pre-line leading-relaxed">{formData.bio}</p>
+                    </section>
                   )}
 
-                  {formData.skills && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Skills</h3>
-                      <div className="flex flex-wrap gap-2">
+                  {formData.experience && (
+                    <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                      <h3 className="text-lg font-semibold text-gray-900">Experience</h3>
+                      <p className="mt-2 text-gray-700 whitespace-pre-line leading-relaxed">{formData.experience}</p>
+                    </section>
+                  )}
+
+                  {formData.education && (
+                    <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                      <h3 className="text-lg font-semibold text-gray-900">Education</h3>
+                      <p className="mt-2 text-gray-700 whitespace-pre-line leading-relaxed">{formData.education}</p>
+                    </section>
+                  )}
+                </div>
+
+                <div className="space-y-6">
+                  <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                    <h3 className="text-lg font-semibold text-gray-900">Skills</h3>
+                    {formData.skills ? (
+                      <div className="mt-3 flex flex-wrap gap-2">
                         {formData.skills.split(',').map((skill, index) => (
-                          <span
-                            key={index}
-                            className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm"
-                          >
+                          <span key={index} className="bg-green-50 text-green-800 border border-green-200 px-3 py-1 rounded-full text-sm">
                             {skill.trim()}
                           </span>
                         ))}
                       </div>
-                    </div>
-                  )}
-
-                  {formData.education && (
-                    <div className="md:col-span-2">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Education</h3>
-                      <p className="text-gray-700 whitespace-pre-line">{formData.education}</p>
-                    </div>
-                  )}
+                    ) : (
+                      <p className="mt-2 text-sm text-gray-600">No skills added yet.</p>
+                    )}
+                  </section>
 
                   {(formData.linkedinUrl || formData.githubUrl) && (
-                    <div className="md:col-span-2">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Links</h3>
-                      <div className="flex space-x-4">
+                    <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                      <h3 className="text-lg font-semibold text-gray-900">Links</h3>
+                      <div className="mt-3 space-y-2">
                         {formData.linkedinUrl && (
-                          <a
-                            href={formData.linkedinUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-green-600 hover:text-green-800 flex items-center"
-                          >
-                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                            </svg>
+                          <a href={formData.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-green-700 hover:text-green-800 font-medium">
                             LinkedIn
                           </a>
                         )}
                         {formData.githubUrl && (
-                          <a
-                            href={formData.githubUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-gray-600 hover:text-gray-800 flex items-center"
-                          >
-                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                            </svg>
+                          <a href={formData.githubUrl} target="_blank" rel="noopener noreferrer" className="text-gray-800 hover:text-black font-medium">
                             GitHub
                           </a>
                         )}
                       </div>
-                    </div>
+                    </section>
                   )}
                 </div>
               </div>
@@ -389,6 +628,79 @@ function Profile() {
           </div>
         </div>
       </div>
+
+      {/* Crop modal (simple) */}
+      {cropOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          onMouseMove={onCropMouseMove}
+          onMouseUp={onCropMouseUp}
+        >
+          <div className="absolute inset-0 bg-black/50" onClick={() => !isUploadingImage && setCropOpen(false)} />
+
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl p-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Crop profile photo</h3>
+              <button
+                type="button"
+                onClick={() => !isUploadingImage && setCropOpen(false)}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-4">
+              <div ref={cropContainerRef} className="relative w-full aspect-video rounded-xl overflow-hidden bg-gray-100">
+                {/* Image */}
+                <img src={cropSrc} alt="Crop" className="absolute inset-0 w-full h-full object-contain" />
+
+                {/* Crop square */}
+                <div
+                  role="presentation"
+                  onMouseDown={onCropMouseDown}
+                  className="absolute border-2 border-white shadow-[0_0_0_9999px_rgba(0,0,0,0.35)] cursor-move"
+                  style={{ left: crop.x, top: crop.y, width: crop.size, height: crop.size }}
+                />
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Zoom</label>
+                  <input
+                    type="range"
+                    min={120}
+                    max={420}
+                    value={crop.size}
+                    onChange={(e) => setCrop((c) => clampCrop({ ...c, size: Number(e.target.value) }))}
+                    className="w-full"
+                    disabled={isUploadingImage}
+                  />
+                </div>
+
+                <div className="flex sm:justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCropOpen(false)}
+                    disabled={isUploadingImage}
+                    className="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={uploadCroppedImage}
+                    disabled={isUploadingImage}
+                    className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
+                  >
+                    {isUploadingImage ? 'Uploading...' : 'Upload'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

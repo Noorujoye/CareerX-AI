@@ -1,4 +1,4 @@
-package com.noorain.login_system.dto;
+package com.noorain.login_system.auth.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

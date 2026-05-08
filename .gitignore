@@ -6,6 +6,8 @@
 **/build/
 **/target/
 
+
+
 # IDE
 **/.idea/
 **/.vscode/*
@@ -18,3 +20,9 @@ Thumbs.db
 
 # Local-only Spring Boot overrides (do not commit secrets)
 backend/src/main/resources/application-local.properties
+
+# Runtime uploads (generated files)
+backend/uploads/
+uploads/
+
+input.txt
