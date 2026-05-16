@@ -20,6 +20,7 @@ ResumeATS Pro is designed to help candidates optimize their resumes to pass ATS 
 - Provides actionable feedback
 - Helps optimize resumes for ATS compatibility
 - Includes a chat feature for personalized guidance
+- Interview preparation for placement
 
 ---
 
