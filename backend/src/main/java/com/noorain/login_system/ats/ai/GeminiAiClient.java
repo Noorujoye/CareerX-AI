@@ -51,25 +51,35 @@ public class GeminiAiClient implements AiClient {
                 )
         );
 
-        ResponseEntity<String> response = restClient.post()
-                .uri(url)
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .body(body)
-                .retrieve()
-                .toEntity(String.class);
-
         Map<String, Object> meta = new LinkedHashMap<>();
         meta.put("provider", "gemini");
         meta.put("model", model);
-        meta.put("httpStatus", response.getStatusCode().value());
 
-        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            return AiResult.builder().json(null).metadata(meta).build();
+        try {
+            ResponseEntity<String> response = restClient.post()
+                    .uri(url)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .toEntity(String.class);
+
+            meta.put("httpStatus", response.getStatusCode().value());
+
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                return AiResult.builder().json(null).metadata(meta).build();
+            }
+
+            String extracted = extractTextFromGenerateContent(response.getBody());
+            return AiResult.builder().json(extracted).metadata(meta).build();
+        } catch (Exception e) {
+            meta.put("error", e.getMessage());
+            meta.put("enabled", false);
+            return AiResult.builder()
+                    .json(null)
+                    .metadata(meta)
+                    .build();
         }
-
-        String extracted = extractTextFromGenerateContent(response.getBody());
-        return AiResult.builder().json(extracted).metadata(meta).build();
     }
 
     private String extractTextFromGenerateContent(String responseBody) {

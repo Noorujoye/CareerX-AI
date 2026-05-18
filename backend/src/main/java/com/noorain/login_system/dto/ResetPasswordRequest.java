@@ -2,26 +2,25 @@ package com.noorain.login_system.auth.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Login request payload.
- *
- * Keep this separate from {@link RegisterRequest} so we don't accidentally
- * allow "register-only" fields (like name/role) during login.
- */
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AuthenticationRequest {
+public class ResetPasswordRequest {
     @NotBlank(message = "Email is required")
     @Email(message = "Email must be valid")
     private String email;
 
+    @NotBlank(message = "OTP is required")
+    private String otp;
+
     @NotBlank(message = "Password is required")
-    private String password;
+    @Size(min = 8, message = "Password must be at least 8 characters")
+    private String newPassword;
 }

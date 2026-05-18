@@ -184,6 +184,32 @@ export const AuthProvider = ({ children }) => {
     setCurrentUser(null)
   }
 
+  const forgotPassword = async (email) => {
+    const normalizedEmail = (email || '').trim().toLowerCase()
+    if (!normalizedEmail) return { ok: false, message: 'Email is required' }
+    const result = await postJson('/api/v1/auth/forgot-password', { email: normalizedEmail })
+    return result
+  }
+
+  const verifyOtp = async (email, otp) => {
+    const normalizedEmail = (email || '').trim().toLowerCase()
+    const trimmedOtp = (otp || '').trim()
+    if (!normalizedEmail) return { ok: false, message: 'Email is required' }
+    if (!trimmedOtp) return { ok: false, message: 'OTP is required' }
+    const result = await postJson('/api/v1/auth/verify-otp', { email: normalizedEmail, otp: trimmedOtp })
+    return result
+  }
+
+  const resetPassword = async (email, otp, newPassword) => {
+    const normalizedEmail = (email || '').trim().toLowerCase()
+    const trimmedOtp = (otp || '').trim()
+    if (!normalizedEmail) return { ok: false, message: 'Email is required' }
+    if (!trimmedOtp) return { ok: false, message: 'OTP is required' }
+    if (!newPassword) return { ok: false, message: 'New password is required' }
+    const result = await postJson('/api/v1/auth/reset-password', { email: normalizedEmail, otp: trimmedOtp, newPassword })
+    return result
+  }
+
   const updateUser = (updatedUser) => {
     if (!updatedUser?.email) return
     setCurrentUser(updatedUser)
@@ -191,7 +217,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = useMemo(() => {
     const token = localStorage.getItem(TOKEN_KEY)
-    return { currentUser, loading, login, signup, logout, updateUser, token, getJson, putJson }
+    return { currentUser, loading, login, signup, logout, updateUser, token, getJson, putJson, forgotPassword, verifyOtp, resetPassword }
   }, [currentUser, loading])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

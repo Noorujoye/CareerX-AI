@@ -1,98 +1,218 @@
-import React, { useState } from 'react'
-
-function IconInbox(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
-      <path d="M4 4h16v12H4z" />
-      <path d="M4 16h5l2 3h2l2-3h5" />
-    </svg>
-  )
-}
-
-function IconUnread(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
-      <path d="M4 4h16v16H4z" />
-      <path d="m4 6 8 7 8-7" />
-      <circle cx="18" cy="6" r="2" />
-    </svg>
-  )
-}
-
-function IconBriefcase(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
-      <path d="M10 6V4h4v2" />
-      <rect x="4" y="6" width="16" height="14" rx="2" />
-      <path d="M4 12h16" />
-    </svg>
-  )
-}
-
-function IconMail(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
-      <path d="M4 6h16v12H4z" />
-      <path d="m4 8 8 6 8-6" />
-    </svg>
-  )
-}
-
-function IconEmptyChat(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
-      <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
-      <path d="M8 9h8" />
-      <path d="M8 13h5" />
-    </svg>
-  )
-}
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
 function Messages() {
-  const [activeTab, setActiveTab] = useState('all')
+  const { token, currentUser, loading } = useAuth()
+  const location = useLocation()
+  const [messages, setMessages] = useState([])
+  const [draft, setDraft] = useState('')
 
-  const tabs = [
-    { id: 'all', label: 'All Messages', Icon: IconInbox },
-    { id: 'unread', label: 'Unread', Icon: IconUnread },
-    { id: 'job', label: 'Job Messages', Icon: IconBriefcase },
-    { id: 'inmail', label: 'InMail', Icon: IconMail },
-  ]
+  useEffect(() => {
+    if (location.state?.initialMessage) {
+      setDraft(location.state.initialMessage)
+      try {
+        window.history.replaceState({}, document.title)
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [location])
+  const [statusMessage, setStatusMessage] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSending, setIsSending] = useState(false)
+  const bottomRef = useRef(null)
+
+  const quickPrompts = useMemo(() => [
+    'How can I improve my resume for ATS?',
+    'Help me prepare for a placement interview.',
+    'What should I do next in my job search?',
+  ], [])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  useEffect(() => {
+    if (loading || !token) return
+
+    let cancelled = false
+    const loadMessages = async () => {
+      setIsLoading(true)
+      setStatusMessage('')
+      try {
+        const res = await fetch('/api/v1/guidance/messages', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) {
+          if (!cancelled) setStatusMessage('Could not load guidance messages.')
+          return
+        }
+        const data = await res.json().catch(() => [])
+        if (!cancelled) setMessages(Array.isArray(data) ? data : [])
+      } catch {
+        if (!cancelled) setStatusMessage('Network error while loading messages.')
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+
+    loadMessages()
+    return () => {
+      cancelled = true
+    }
+  }, [loading, token])
+
+  const sendMessage = async (messageText = draft) => {
+    const content = messageText.trim()
+    if (!content || !token || isSending) return
+
+    const optimisticUserMessage = {
+      id: `local-${Date.now()}`,
+      role: 'user',
+      content,
+      createdAt: new Date().toISOString(),
+    }
+
+    setMessages((prev) => [...prev, optimisticUserMessage])
+    setDraft('')
+    setStatusMessage('')
+    setIsSending(true)
+
+    try {
+      const res = await fetch('/api/v1/guidance/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ message: content }),
+      })
+
+      if (!res.ok) {
+        let message = 'Could not send your message.'
+        try {
+          const data = await res.json()
+          message = data?.message || message
+        } catch {
+          // ignore
+        }
+        setStatusMessage(message)
+        return
+      }
+
+      const assistantMessage = await res.json()
+      setMessages((prev) => [...prev, assistantMessage])
+    } catch {
+      setStatusMessage('Network error. Please try again.')
+    } finally {
+      setIsSending(false)
+    }
+  }
+
+  if (!loading && !currentUser) {
+    return (
+      <div className="min-h-screen bg-white py-16">
+        <div className="container mx-auto px-4 max-w-2xl">
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">Career Guidance</h1>
+          <div className="border border-gray-200 rounded-lg p-6 shadow-sm">
+            <p className="text-gray-700 mb-4">Log in to chat with CareerX-AI and save your guidance history.</p>
+            <Link to="/login" className="inline-flex items-center px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700">
+              Log in
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">Messages</h1>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Career Guidance</h1>
+          <p className="text-gray-600 mt-2">Ask for resume, ATS, interview, or job search help.</p>
+        </div>
 
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Left Sidebar */}
-          <div className="w-full lg:w-64 bg-white rounded-lg shadow-md p-4">
-            <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible">
-              {tabs.map((tab) => (
-                <div key={tab.id} className="shrink-0">
-                <button
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? 'bg-green-100 text-green-800'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <tab.Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
-                </button>
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+          <div className="h-[560px] overflow-y-auto p-5 space-y-4">
+            {isLoading && (
+              <div className="text-sm text-gray-500">Loading your messages...</div>
+            )}
+
+            {!isLoading && messages.length === 0 && (
+              <div className="h-full flex flex-col justify-center">
+                <h2 className="text-xl font-semibold text-gray-900 mb-3">What should we work on?</h2>
+                <div className="grid md:grid-cols-3 gap-3">
+                  {quickPrompts.map((prompt) => (
+                    <button
+                      key={prompt}
+                      onClick={() => sendMessage(prompt)}
+                      className="text-left border border-gray-200 rounded-lg p-4 hover:border-green-500 hover:bg-green-50 transition"
+                    >
+                      <span className="text-sm font-medium text-gray-900">{prompt}</span>
+                    </button>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+
+            {messages.map((message) => {
+              const isUser = message.role === 'user'
+              return (
+                <div key={message.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[78%] rounded-lg px-4 py-3 ${
+                    isUser ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-900'
+                  }`}>
+                    <p className="whitespace-pre-wrap text-sm leading-6">{message.content}</p>
+                    {!isUser && Array.isArray(message.suggestedActions) && message.suggestedActions.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {message.suggestedActions.map((action) => (
+                          <button
+                            key={action}
+                            onClick={() => setDraft(action)}
+                            className="text-xs rounded-full border border-gray-300 px-3 py-1 text-gray-700 hover:bg-white"
+                          >
+                            {action}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+            <div ref={bottomRef} />
           </div>
 
-          {/* Main Content Area */}
-          <div className="flex-1 bg-white rounded-lg shadow-md p-6">
-            <div className="text-center text-gray-500">
-              <div className="flex justify-center mb-4 text-gray-400">
-                <IconEmptyChat className="w-16 h-16" />
+          <div className="border-t border-gray-200 p-4">
+            {statusMessage && (
+              <div className="mb-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+                {statusMessage}
               </div>
-              <h2 className="text-xl font-semibold mb-2">No messages yet</h2>
-              <p>When you receive messages, they'll appear here.</p>
+            )}
+            <div className="flex gap-3">
+              <textarea
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault()
+                    sendMessage()
+                  }
+                }}
+                rows={2}
+                maxLength={2000}
+                placeholder="Ask CareerX-AI for personalized guidance..."
+                className="flex-1 resize-none rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+              <button
+                onClick={() => sendMessage()}
+                disabled={!draft.trim() || isSending}
+                className="self-end rounded-md bg-green-600 px-5 py-2 text-white font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSending ? 'Sending' : 'Send'}
+              </button>
             </div>
           </div>
         </div>

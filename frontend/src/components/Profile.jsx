@@ -36,7 +36,6 @@ function Profile() {
   const [isDragging, setIsDragging] = useState(false)
   const dragOffsetRef = useRef({ dx: 0, dy: 0 })
   const navigate = useNavigate()
-  const apiBase = ''
 
   useLayoutEffect(() => {
     if (!currentUser) {
@@ -251,7 +250,7 @@ function Profile() {
       // Keep navbar display in sync
       updateUser({ ...currentUser, firstName: data?.firstName, lastName: data?.lastName, email: data?.email, profileImageUrl: bustedUrl || absUrl || rawUrl })
       setCropOpen(false)
-    } catch (e) {
+    } catch {
       setImageError('Failed to upload image')
     } finally {
       setIsUploadingImage(false)

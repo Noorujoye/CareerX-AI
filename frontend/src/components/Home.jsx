@@ -101,34 +101,53 @@ function Home() {
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-12 text-gray-800">Why Choose CareerX-AI?</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300 hover:border-green-200 border-2 border-transparent">
+            <Link
+              to="/job-recommender"
+              className="block bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300 hover:border-green-200 border-2 border-transparent text-left hover:scale-[1.02] transform"
+              aria-label="Navigate to AI Job Recommendations"
+            >
               <div className="w-12 h-12 rounded-lg bg-green-100 text-green-700 flex items-center justify-center mb-4">
                 <IconTarget className="w-6 h-6" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-gray-800">AI Job Recommendations</h3>
               <p className="text-gray-600">Get personalized job matches based on your skills and preferences.</p>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300 hover:border-green-200 border-2 border-transparent">
+            </Link>
+            
+            <Link
+              to="/resume-optimizer"
+              className="block bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300 hover:border-green-200 border-2 border-transparent text-left hover:scale-[1.02] transform"
+              aria-label="Navigate to ATS Resume Optimizer"
+            >
               <div className="w-12 h-12 rounded-lg bg-green-100 text-green-700 flex items-center justify-center mb-4">
                 <IconDocument className="w-6 h-6" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-gray-800">ATS Resume Optimizer</h3>
               <p className="text-gray-600">Optimize your resume to pass ATS filters and impress recruiters.</p>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300 hover:border-green-200 border-2 border-transparent">
+            </Link>
+
+            <Link
+              to="/interview-assistant"
+              className="block bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300 hover:border-green-200 border-2 border-transparent text-left hover:scale-[1.02] transform"
+              aria-label="Navigate to Interview Assistant"
+            >
               <div className="w-12 h-12 rounded-lg bg-green-100 text-green-700 flex items-center justify-center mb-4">
                 <IconChat className="w-6 h-6" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-gray-800">Interview Assistant</h3>
               <p className="text-gray-600">Practice interviews with AI-powered feedback and tips.</p>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300 hover:border-green-200 border-2 border-transparent">
+            </Link>
+
+            <Link
+              to="/career-roadmap"
+              className="block bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300 hover:border-green-200 border-2 border-transparent text-left hover:scale-[1.02] transform"
+              aria-label="Navigate to Career Roadmap"
+            >
               <div className="w-12 h-12 rounded-lg bg-green-100 text-green-700 flex items-center justify-center mb-4">
                 <IconMap className="w-6 h-6" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-gray-800">Career Roadmap</h3>
               <p className="text-gray-600">Plan your career journey with personalized guidance.</p>
-            </div>
+            </Link>
           </div>
         </div>
       </section>

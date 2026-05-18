@@ -68,6 +68,7 @@ function Layout() {
     { to: '/resume-optimizer', label: 'Resume Optimizer' },
     { to: '/job-recommender', label: 'Job Recommender' },
     { to: '/interview-assistant', label: 'Interview Assistant' },
+    { to: '/career-roadmap', label: 'Career Roadmap' },
     { to: '/about', label: 'About' },
   ]
 
@@ -254,7 +255,7 @@ function Layout() {
                             <div className="flex items-center justify-between gap-3">
                               <div>
                                 <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Theme</div>
-                                <div className="text-xs text-gray-600 dark:text-gray-400">Light / Dark mode</div>
+                                <div className="text-xs text-gray-650 dark:text-gray-400">Light / Dark mode</div>
                               </div>
                               <button
                                 type="button"
@@ -278,7 +279,7 @@ function Layout() {
                         )}
 
                         {/* Logout */}
-                        <button onClick={handleLogout} className="w-full text-left p-2 text-red-600 rounded hover:bg-green-100 dark:hover:bg-gray-700 transition-colors">
+                        <button onClick={handleLogout} className="w-full text-left p-2 text-red-650 rounded hover:bg-green-100 dark:hover:bg-gray-700 transition-colors">
                           Logout
                         </button>
                       </div>

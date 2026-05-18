@@ -24,5 +24,6 @@ backend/src/main/resources/application-local.properties
 # Runtime uploads (generated files)
 backend/uploads/
 uploads/
+backend/data/
 
 input.txt
