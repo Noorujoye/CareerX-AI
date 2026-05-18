@@ -9,6 +9,7 @@ import com.noorain.login_system.ats.dto.AtsSuggestionsResponse;
 import com.noorain.login_system.ats.extraction.DocumentTextExtractor;
 import com.noorain.login_system.ats.scoring.AtsScoringEngine;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +25,9 @@ public class AtsSuggestionsService {
     private final AtsScoringEngine scoringEngine;
     private final AiClient aiClient;
     private final ObjectMapper objectMapper;
+
+    @Value("${app.ats.suggestions.ai-enabled:false}")
+    private boolean aiEnabled;
 
     public AtsSuggestionsResponse suggest(MultipartFile resumeFile, String jobDescriptionText) {
         if (resumeFile == null || resumeFile.isEmpty()) {
@@ -47,7 +51,9 @@ public class AtsSuggestionsService {
         Map<String, Object> meta = new LinkedHashMap<>();
         meta.put("jobDescriptionProvided", true);
 
-        AiSuggestion aiSuggestion = generateAiSuggestion(resumeText, jobDescriptionText, report, meta);
+        AiSuggestion aiSuggestion = aiEnabled
+                ? generateAiSuggestion(resumeText, jobDescriptionText, report, meta)
+                : null;
         List<String> edits = aiSuggestion == null ? mergeSuggestions(report) : aiSuggestion.resumeEdits();
         List<String> rewrites = aiSuggestion == null ? List.of() : aiSuggestion.bulletRewrites();
 
@@ -84,7 +90,8 @@ public class AtsSuggestionsService {
                 Job description: %s
                 Resume text: %s
                 """.formatted(
-                safeList(report.getMissingKeywords()).subList(0, Math.min(12, safeList(report.getMissingKeywords()).size())),
+                safeList(report.getMissingKeywords()).subList(0,
+                        Math.min(12, safeList(report.getMissingKeywords()).size())),
                 safeList(report.getPriorityFixes()),
                 truncate(jobDescriptionText, 1200),
                 truncate(resumeText, 1600)));
@@ -100,8 +107,10 @@ public class AtsSuggestionsService {
             JsonNode root = objectMapper.readTree(stripCodeFence(result.getJson()));
             List<String> resumeEdits = readStringArray(root.path("resumeEdits"), 5);
             List<String> bulletRewrites = readStringArray(root.path("bulletRewrites"), 3);
-            if (resumeEdits.isEmpty() && bulletRewrites.isEmpty()) return null;
-            if (resumeEdits.isEmpty()) resumeEdits = mergeSuggestions(report);
+            if (resumeEdits.isEmpty() && bulletRewrites.isEmpty())
+                return null;
+            if (resumeEdits.isEmpty())
+                resumeEdits = mergeSuggestions(report);
             return new AiSuggestion(resumeEdits, bulletRewrites);
         } catch (Exception e) {
             return null;
@@ -137,24 +146,29 @@ public class AtsSuggestionsService {
 
     private static List<String> readStringArray(JsonNode node, int max) {
         List<String> values = new ArrayList<>();
-        if (!node.isArray()) return values;
+        if (!node.isArray())
+            return values;
         for (JsonNode item : node) {
             String value = safeTrim(item.asText(""));
-            if (value != null) values.add(value);
-            if (values.size() == max) break;
+            if (value != null)
+                values.add(value);
+            if (values.size() == max)
+                break;
         }
         return values;
     }
 
     private static String stripCodeFence(String value) {
         String text = value.trim();
-        if (!text.startsWith("```")) return text;
+        if (!text.startsWith("```"))
+            return text;
         text = text.replaceFirst("^```(?:json)?\\s*", "");
         return text.replaceFirst("\\s*```$", "").trim();
     }
 
     private static String truncate(String value, int max) {
-        if (value == null || value.length() <= max) return value;
+        if (value == null || value.length() <= max)
+            return value;
         return value.substring(0, max) + "...";
     }
 

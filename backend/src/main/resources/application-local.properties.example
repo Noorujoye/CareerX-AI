@@ -6,11 +6,17 @@
 spring.datasource.url=jdbc:mysql://localhost:3306/login_db?createDatabaseIfNotExist=true
 spring.datasource.username=root
 spring.datasource.password=CHANGE_ME
+spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
 
 # JWT
 # Must be >= 32 characters
 app.jwt.secret=CHANGE_ME
 # app.jwt.expiration-ms=86400000
+
+# Optional AI toggles (default false)
+app.ats.suggestions.ai-enabled=false
+app.guidance.ai-enabled=false
+app.interview.ai-enabled=false
 
 # Tip (PowerShell): generate a strong secret
 #   [Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))

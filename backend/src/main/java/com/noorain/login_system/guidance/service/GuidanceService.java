@@ -9,6 +9,7 @@ import com.noorain.login_system.guidance.entity.GuidanceMessage;
 import com.noorain.login_system.guidance.repository.GuidanceMessageRepository;
 import com.noorain.login_system.model.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,9 @@ public class GuidanceService {
     private final GuidanceMessageRepository guidanceMessageRepository;
     private final AiClient aiClient;
     private final ObjectMapper objectMapper;
+
+    @Value("${app.guidance.ai-enabled:false}")
+    private boolean aiEnabled;
 
     public List<GuidanceMessageResponse> history(User user) {
         var messages = guidanceMessageRepository.findByUser_IdOrderByCreatedAtDesc(
@@ -59,7 +63,7 @@ public class GuidanceService {
 
     private AiReply generateReply(User user, String message) {
         String prompt = buildPrompt(user, message);
-        AiResult result = aiClient.generateJson(prompt);
+        AiResult result = aiEnabled ? aiClient.generateJson(prompt) : null;
         Map<String, Object> metadata = new LinkedHashMap<>();
         if (result != null && result.getMetadata() != null) {
             metadata.putAll(result.getMetadata());
@@ -83,15 +87,18 @@ public class GuidanceService {
             String cleaned = stripCodeFence(json);
             JsonNode root = objectMapper.readTree(cleaned);
             String reply = root.path("reply").asText("").trim();
-            if (reply.isBlank()) return null;
+            if (reply.isBlank())
+                return null;
 
             List<String> actions = new ArrayList<>();
             JsonNode suggested = root.path("suggestedActions");
             if (suggested.isArray()) {
                 for (JsonNode node : suggested) {
                     String action = node.asText("").trim();
-                    if (!action.isBlank()) actions.add(action);
-                    if (actions.size() == 4) break;
+                    if (!action.isBlank())
+                        actions.add(action);
+                    if (actions.size() == 4)
+                        break;
                 }
             }
             return new AiReply(reply, actions, metadata);
@@ -102,7 +109,8 @@ public class GuidanceService {
 
     private static String stripCodeFence(String value) {
         String text = value.trim();
-        if (!text.startsWith("```")) return text;
+        if (!text.startsWith("```"))
+            return text;
         text = text.replaceFirst("^```(?:json)?\\s*", "");
         return text.replaceFirst("\\s*```$", "").trim();
     }
@@ -129,7 +137,8 @@ public class GuidanceService {
             actions.add("Compare a job description with your resume");
         } else {
             String name = user.getFirstName() == null || user.getFirstName().isBlank() ? "there" : user.getFirstName();
-            reply = "Hi " + name + ". Tell me your target role, current skills, and where you feel stuck. I can help with resume improvements, ATS strategy, interview prep, or job search planning.";
+            reply = "Hi " + name
+                    + ". Tell me your target role, current skills, and where you feel stuck. I can help with resume improvements, ATS strategy, interview prep, or job search planning.";
             actions.add("Share your target role");
             actions.add("Ask for resume feedback");
             actions.add("Ask for interview practice");
@@ -188,7 +197,8 @@ public class GuidanceService {
     }
 
     private static String truncate(String value, int max) {
-        if (value == null || value.length() <= max) return value;
+        if (value == null || value.length() <= max)
+            return value;
         return value.substring(0, max) + "...";
     }
 
