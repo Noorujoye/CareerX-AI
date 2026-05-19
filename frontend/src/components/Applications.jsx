@@ -209,7 +209,7 @@ function Applications() {
                   name="company"
                   value={form.company}
                   onChange={updateField}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Company name"
                   required
                 />
@@ -222,7 +222,7 @@ function Applications() {
                   name="roleTitle"
                   value={form.roleTitle}
                   onChange={updateField}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Role title"
                   required
                 />
@@ -235,7 +235,7 @@ function Applications() {
                   name="location"
                   value={form.location}
                   onChange={updateField}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Remote, Bengaluru, etc."
                 />
               </div>
@@ -247,7 +247,7 @@ function Applications() {
                   name="status"
                   value={form.status}
                   onChange={updateField}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
                 >
                   {statusOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -265,7 +265,7 @@ function Applications() {
                   type="date"
                   value={form.appliedDate}
                   onChange={updateField}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
               <div>
@@ -276,7 +276,7 @@ function Applications() {
                   name="sourceUrl"
                   value={form.sourceUrl}
                   onChange={updateField}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="https://..."
                 />
               </div>
@@ -289,7 +289,7 @@ function Applications() {
                   value={form.notes}
                   onChange={updateField}
                   rows={4}
-                  className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Key details, next steps, follow-ups"
                 />
               </div>

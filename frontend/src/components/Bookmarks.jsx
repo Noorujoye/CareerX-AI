@@ -187,7 +187,7 @@ function Bookmarks() {
                   name="company"
                   value={form.company}
                   onChange={updateField}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Company name"
                   required
                 />
@@ -200,7 +200,7 @@ function Bookmarks() {
                   name="roleTitle"
                   value={form.roleTitle}
                   onChange={updateField}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Role title"
                   required
                 />
@@ -213,7 +213,7 @@ function Bookmarks() {
                   name="location"
                   value={form.location}
                   onChange={updateField}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Remote, Bengaluru, etc."
                 />
               </div>
@@ -225,7 +225,7 @@ function Bookmarks() {
                   name="sourceUrl"
                   value={form.sourceUrl}
                   onChange={updateField}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="https://..."
                 />
               </div>
@@ -238,7 +238,7 @@ function Bookmarks() {
                   value={form.notes}
                   onChange={updateField}
                   rows={4}
-                  className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Why this role matters, key requirements"
                 />
               </div>
